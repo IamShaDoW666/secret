@@ -41,7 +41,7 @@ class _TasksScreenState extends State<TasksScreen> {
             child: Scaffold(
           backgroundColor: kWhiteColor,
           appBar: CustomAppBar(
-            title: 'Hi Jerome',
+            title: 'Task Manager',
             showBackArrow: false,
             actionWidgets: [
               PopupMenuButton<int>(
@@ -196,6 +196,10 @@ class _TasksScreenState extends State<TasksScreen> {
                                     ),
                                     fillColor: kWhiteColor,
                                     onChange: (value) {
+                                      if (value == "secret") {
+                                        Navigator.pushNamed(context, '/chat');
+                                        return;
+                                      }
                                       context.read<TasksBloc>().add(
                                           SearchTaskEvent(keywords: value));
                                     }),

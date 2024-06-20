@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task_manager_app/message/data/local/data_sources/messages_data_provider.dart';
+import 'package:task_manager_app/message/data/repository/message_repository.dart';
+import 'package:task_manager_app/message/presentation/bloc/messages_bloc.dart';
 import 'package:task_manager_app/routes/app_router.dart';
 import 'package:task_manager_app/bloc_state_observer.dart';
 import 'package:task_manager_app/routes/pages.dart';
@@ -30,17 +33,25 @@ class MyApp extends StatelessWidget {
             TaskRepository(taskDataProvider: TaskDataProvider(preferences)),
         child: BlocProvider(
             create: (context) => TasksBloc(context.read<TaskRepository>()),
-            child: MaterialApp(
-              title: 'Task Manager',
-              debugShowCheckedModeBanner: false,
-              initialRoute: Pages.initial,
-              onGenerateRoute: onGenerateRoute,
-              theme: ThemeData(
-                fontFamily: 'Sora',
-                visualDensity: VisualDensity.adaptivePlatformDensity,
-                canvasColor: Colors.transparent,
-                colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
-                useMaterial3: true,
+            child: RepositoryProvider(
+              create: (context) => MessageRepository(
+                  messageDataProvider: MessageDataProvider(preferences)),
+              child: BlocProvider(
+                create: (context) =>
+                    MessagesBloc(context.read<MessageRepository>()),
+                child: MaterialApp(
+                  title: 'Task Manager',
+                  debugShowCheckedModeBanner: false,
+                  initialRoute: Pages.initial,
+                  onGenerateRoute: onGenerateRoute,
+                  theme: ThemeData(
+                    fontFamily: 'Sora',
+                    visualDensity: VisualDensity.adaptivePlatformDensity,
+                    canvasColor: Colors.transparent,
+                    colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
+                    useMaterial3: true,
+                  ),
+                ),
               ),
             )));
   }

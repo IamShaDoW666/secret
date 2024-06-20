@@ -3,4 +3,5 @@ class Pages {
   static const home = '/home';
   static const createNewTask = '/createNewTask';
   static const updateTask = '/updateNewTask';
+  static const chat = '/chat';
 }
