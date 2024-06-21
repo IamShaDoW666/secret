@@ -1,9 +1,11 @@
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
-import 'package:task_manager_app/components/build_text_field.dart';
 import 'package:task_manager_app/components/widgets.dart';
 import 'package:task_manager_app/message/data/local/model/message_model.dart';
 import 'package:task_manager_app/message/presentation/bloc/messages_bloc.dart';
@@ -23,48 +25,98 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   late io.Socket socket;
   TextEditingController messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final FocusNode focusNode = FocusNode();
+  bool connected = false;
+  bool inChat = false;
 
   void connectSocket() {
-    socket = io.io("http://192.168.18.38:5000", <String, dynamic>{
-      'transports': ['websocket']
+    socket = io.io("https://chatt.foodonspot.online", <String, dynamic>{
+      // https://chatt.foodonspot.online
+      'transports': ['websocket'],
+      'autoConnect': false
     });
     socket.connect();
-    socket
-        .onConnect((data) => print("CONNECTED +++++++++++++++++++++++++++++"));
-    socket.on("ROOM_MESSAGE", (data) {
-      var message = MessageModel(
-          message: data["message"], time: "0:00", username: "Milan");
-      context
-          .read<MessagesBloc>()
-          .add(AddNewMessageEvent(messageModel: message));
+    socket.onConnect((data) {
+      setState(() {
+        connected = true;
+        socket.emit("JOINED");
+      });
+      socket.on("ROOM_MESSAGE", (data) {
+        var message = MessageModel(
+            message: data["message"], time: data["time"], username: "Milan");
+        context
+            .read<MessagesBloc>()
+            .add(AddNewMessageEvent(messageModel: message));
+        _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      });
+      socket.on("ROOMS", (data) {
+        setState(() {
+          inChat = !inChat;
+        });
+      });
+      socket.on("IN_CHAT", (data) {
+        setState(() {
+          inChat = true;
+        });
+      });
+      socket.on("LEFT_CHAT", (data) {
+        setState(() {
+          inChat = false;
+        });
+      });
     });
-    socket.onConnectError((data) => print(data.toString()));
+
+    socket.onConnectError((data) {
+      print(data.toString());
+      setState(() {
+        connected = false;
+      });
+    });
     socket.onDisconnect((data) {
-      print("----------------------------------");
-      context.read<MessagesBloc>().add(ClearMessagesEvent());
+      // context.read<MessagesBloc>().add(ClearMessagesEvent());
     });
   }
 
   @override
   void initState() {
-    context.read<MessagesBloc>().add(FetchMessageEvent());
     super.initState();
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        setState(() {
+          // show = false;
+        });
+      }
+    });
+    context.read<MessagesBloc>().add(FetchMessageEvent());
     connectSocket();
   }
 
   @override
   void dispose() {
+    socket.close();
     socket.disconnect();
+    socket.dispose();
     super.dispose();
   }
 
   void _handleSubmitted(String text) {
     messageController.clear();
-    var message = MessageModel(message: text, time: "0:00", username: "Megha");
+    var message = MessageModel(
+        message: text,
+        time: DateFormat('HH:mm').format(DateTime.now()),
+        username: "Malu",
+        sent: true);
     context.read<MessagesBloc>().add(AddNewMessageEvent(messageModel: message));
-    socket.emit("SEND_ROOM_MESSAGE",
-        <String, dynamic>{"roomId": "1", "message": text, "username": "Megha"});
+    socket.emit("SEND_ROOM_MESSAGE", <String, dynamic>{
+      "roomId": "1",
+      "message": text,
+      "username": message.username
+    });
     context.read<MessagesBloc>().add(FetchMessageEvent());
+    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
   }
 
   Widget _buildTextComposer() {
@@ -74,6 +126,9 @@ class _ChatScreenState extends State<ChatScreen> {
         children: <Widget>[
           Expanded(
             child: TextField(
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
+              focusNode: focusNode,
               controller: messageController,
               onSubmitted: (value) {},
               decoration: const InputDecoration.collapsed(
@@ -92,33 +147,53 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(MessageModel message) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            margin: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              child: Text(
-                message.username,
-                style: const TextStyle(fontSize: 8),
-              ),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: message.sent
+                ? Colors.pink.shade100.withAlpha(150)
+                : Colors.blue.shade100.withAlpha(150)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // Container(
+            //   margin: const EdgeInsets.only(right: 16.0),
+            //   child: CircleAvatar(
+            //     child: Text(
+            //       message.username,
+            //       style: const TextStyle(fontSize: 8),
+            //     ),
+            //   ),
+            // ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(message.username,
+                      style: Theme.of(context).textTheme.titleSmall),
+                  Container(
+                    margin: const EdgeInsets.only(top: 5.0),
+                    child: Text(
+                      message.message,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Text(
+                      message.time,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall!
+                          .copyWith(color: Colors.black54),
+                    ),
+                  )
+                ],
+              ).paddingSymmetric(horizontal: 8, vertical: 4),
             ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(message.username,
-                    style: Theme.of(context).textTheme.titleMedium),
-                Container(
-                  margin: const EdgeInsets.only(top: 5.0),
-                  child: Text(message.message),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -128,7 +203,60 @@ class _ChatScreenState extends State<ChatScreen> {
     var size = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Secret"),
+          title: Row(
+            children: [
+              Text(
+                connected ? "Connected" : "Disconnected",
+                style: TextStyle(
+                    color: connected ? Colors.black : Colors.redAccent),
+              ),
+              16.width,
+              inChat
+                  ? AvatarGlow(
+                      glowColor: Colors.greenAccent,
+                      glowShape: BoxShape.circle,
+                      animate: true,
+                      child: const Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.green,
+                      ),
+                    )
+                  : const Offstage()
+            ],
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_outlined,
+                color: Colors.black),
+            onPressed: () {
+              socket.close();
+              socket.disconnect();
+              socket.dispose();
+              Navigator.of(context).pop();
+            },
+          ),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  context.read<MessagesBloc>().add(ClearMessagesEvent());
+                },
+                icon: const Icon(Icons.clear_all)),
+            connected
+                ? const Icon(
+                    Icons.check_circle,
+                    color: Colors.greenAccent,
+                  ).paddingAll(8)
+                : IconButton(
+                    onPressed: () {
+                      socket.close();
+                      socket.disconnect();
+                      socket.dispose();
+                      connectSocket();
+                    },
+                    icon: const Icon(
+                      Icons.signal_wifi_connected_no_internet_4_outlined,
+                      color: Colors.red,
+                    ).paddingAll(8))
+          ],
         ),
         body: Center(
           child: BlocConsumer<MessagesBloc, MessagesState>(
@@ -161,11 +289,15 @@ class _ChatScreenState extends State<ChatScreen> {
                         children: [
                           Flexible(
                             child: ListView.builder(
-                              // reverse:
-                              //     true, // To keep the latest messages at the bottom
+                              controller: _scrollController,
                               padding: const EdgeInsets.all(8.0),
-                              itemCount: state.messages.length,
+                              itemCount: state.messages.length + 1,
                               itemBuilder: (BuildContext context, int index) {
+                                if (index == state.messages.length) {
+                                  return Container(
+                                    height: 100,
+                                  );
+                                }
                                 return _buildMessageBubble(
                                     state.messages[index]);
                               },
@@ -189,19 +321,20 @@ class _ChatScreenState extends State<ChatScreen> {
                               height: 50,
                             ),
                             buildText(
-                                'Schedule your tasks',
+                                'No Messages',
                                 kBlackColor,
                                 textBold,
                                 FontWeight.w600,
                                 TextAlign.center,
                                 TextOverflow.clip),
                             buildText(
-                                'Manage your task schedule easily\nand efficiently',
+                                'Send a message',
                                 kBlackColor.withOpacity(.5),
                                 textSmall,
                                 FontWeight.normal,
                                 TextAlign.center,
                                 TextOverflow.clip),
+                            _buildTextComposer(),
                           ],
                         ),
                       );

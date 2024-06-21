@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task_manager_app/firebase_api.dart';
 import 'package:task_manager_app/message/data/local/data_sources/messages_data_provider.dart';
 import 'package:task_manager_app/message/data/repository/message_repository.dart';
 import 'package:task_manager_app/message/presentation/bloc/messages_bloc.dart';
@@ -11,11 +12,17 @@ import 'package:task_manager_app/tasks/data/local/data_sources/tasks_data_provid
 import 'package:task_manager_app/tasks/data/repository/task_repository.dart';
 import 'package:task_manager_app/tasks/presentation/bloc/tasks_bloc.dart';
 import 'package:task_manager_app/utils/color_palette.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   Bloc.observer = BlocStateOberver();
   SharedPreferences preferences = await SharedPreferences.getInstance();
+  await FirebaseApi().initNotifications();
   runApp(MyApp(
     preferences: preferences,
   ));

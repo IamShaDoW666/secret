@@ -197,6 +197,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                     fillColor: kWhiteColor,
                                     onChange: (value) {
                                       if (value == "secret") {
+                                        searchController.clear();
                                         Navigator.pushNamed(context, '/chat');
                                         return;
                                       }

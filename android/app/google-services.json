@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1012763415795",
+    "firebase_url": "https://chatt-cfc12-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "chatt-cfc12",
+    "storage_bucket": "chatt-cfc12.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012763415795:android:ea49460ba10376c247d386",
+        "android_client_info": {
+          "package_name": "com.example.task_manager_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2h9RSeK_WJPtG_Ua0iiuQFKSnm_qQnCU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

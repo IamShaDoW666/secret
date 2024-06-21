@@ -22,9 +22,9 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
   _addNewMessage(AddNewMessageEvent event, Emitter<MessagesState> emit) async {
     emit(MessagesLoading());
     try {
-      // if (event.messageModel.title.trim().isEmpty) {
-      //   return emit(AddMessageFailure(error: 'Message title cannot be blank'));
-      // }
+      if (event.messageModel.message.trim().isEmpty) {
+        return emit(AddMessageFailure(error: 'Message cannot be blank'));
+      }
       // if (event.messageModel.description.trim().isEmpty) {
       //   return emit(
       //       AddMessageFailure(error: 'Message description cannot be blank'));
