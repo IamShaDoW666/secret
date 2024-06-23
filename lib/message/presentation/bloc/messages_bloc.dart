@@ -20,21 +20,11 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
   }
 
   _addNewMessage(AddNewMessageEvent event, Emitter<MessagesState> emit) async {
-    emit(MessagesLoading());
+    // emit(MessagesLoading());
     try {
       if (event.messageModel.message.trim().isEmpty) {
         return emit(AddMessageFailure(error: 'Message cannot be blank'));
       }
-      // if (event.messageModel.description.trim().isEmpty) {
-      //   return emit(
-      //       AddMessageFailure(error: 'Message description cannot be blank'));
-      // }
-      // if (event.messageModel.startDateTime == null) {
-      //   return emit(AddMessageFailure(error: 'Missing message start date'));
-      // }
-      // if (event.messageModel.stopDateTime == null) {
-      //   return emit(AddMessageFailure(error: 'Missing message stop date'));
-      // }
       await messageRepository.createNewMessage(event.messageModel);
       emit(AddMessagesSuccess());
       final messages = await messageRepository.getMessages();
@@ -46,7 +36,7 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
 
   void _fetchMessages(
       FetchMessageEvent event, Emitter<MessagesState> emit) async {
-    emit(MessagesLoading());
+    // emit(MessagesLoading());
     try {
       final messages = await messageRepository.getMessages();
       return emit(FetchMessagesSuccess(messages: messages));
@@ -56,7 +46,7 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
   }
 
   _deleteMessage(DeleteMessageEvent event, Emitter<MessagesState> emit) async {
-    emit(MessagesLoading());
+    // emit(MessagesLoading());
     try {
       final messages =
           await messageRepository.deleteMessage(event.messageModel);
@@ -67,7 +57,7 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
   }
 
   _clearMessages(ClearMessagesEvent event, Emitter<MessagesState> emit) async {
-    emit(MessagesLoading());
+    // emit(MessagesLoading());
     try {
       final messages = await messageRepository.clearMessage();
       return emit(FetchMessagesSuccess(messages: messages));

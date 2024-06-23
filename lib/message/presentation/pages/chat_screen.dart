@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -58,8 +57,7 @@ class _ChatScreenState extends State<ChatScreen> {
         context
             .read<MessagesBloc>()
             .add(AddNewMessageEvent(messageModel: message));
-        _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+        scrollDown();
       });
 
       socket.on(EVENTS.connections, (data) {
@@ -99,7 +97,6 @@ class _ChatScreenState extends State<ChatScreen> {
         inChat = false;
         connected = false;
       });
-      // context.read<MessagesBloc>().add(ClearMessagesEvent());
     });
   }
 
@@ -107,10 +104,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     focusNode.addListener(() {
-      if (!focusNode.hasFocus) {
-        setState(() {
-          print("NO FOCUSS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        });
+      if (focusNode.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 500), () => scrollDown());
       }
     });
     context.read<MessagesBloc>().add(FetchMessageEvent());
@@ -122,10 +117,22 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.close();
     socket.disconnect();
     socket.dispose();
+    focusNode.dispose();
+    messageController.dispose();
     super.dispose();
   }
 
+  void scrollDown() {
+    print("SCROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL");
+    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.fastOutSlowIn);
+  }
+
   void _handleSubmitted(String text) {
+    if (messageController.text.isEmptyOrNull) {
+      return;
+    }
     messageController.clear();
     var message = MessageModel(
         message: text,
@@ -139,16 +146,15 @@ class _ChatScreenState extends State<ChatScreen> {
       "username": message.username
     });
     context.read<MessagesBloc>().add(FetchMessageEvent());
-    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    scrollDown();
   }
 
   Widget _buildTextComposer() {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -161,7 +167,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   hintColor: kGrey00,
                   fillColor: kGrey0,
                   textColor: kWhiteColor,
-                  onChange: () {},
+                  onChange: (val) {},
                   controller: messageController,
                 ),
               ),
@@ -186,57 +192,37 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageBubble(MessageModel message) {
+    var alignment = message.sent ? Alignment.centerRight : Alignment.centerLeft;
     return Container(
-      padding: const EdgeInsets.all(4),
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      // alignment: message.sent ? Alignment.centerRight : Alignment.centerLeft,
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: message.sent ? kPrimaryColor : kGrey0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          // Container(
-          //   margin: const EdgeInsets.only(right: 16.0),
-          //   child: CircleAvatar(
-          //     child: Text(
-          //       message.username,
-          //       style: const TextStyle(fontSize: 8),
-          //     ),
-          //   ),
-          // ),
-          Expanded(
+      alignment: alignment,
+      child: Column(
+        crossAxisAlignment:
+            message.sent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+                color: message.sent ? kPrimaryColor : kGrey0,
+                borderRadius: BorderRadius.circular(16)),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(message.username,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall!
-                        .copyWith(color: kWhiteColor)),
-                Container(
-                  margin: const EdgeInsets.only(top: 5.0),
-                  child: Text(
-                    message.message,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .copyWith(color: kWhiteColor),
-                  ),
+              crossAxisAlignment: message.sent
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message.message,
+                  style: primaryTextStyle(color: kWhiteColor),
                 ),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Text(
-                    message.time,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall!
-                        .copyWith(color: kGrey2),
-                  ),
+                8.height,
+                Text(
+                  message.time,
+                  style: primaryTextStyle(size: 10, color: kGrey1),
+                  textAlign: TextAlign.right,
                 )
               ],
-            ).paddingSymmetric(horizontal: 8, vertical: 4),
-          ),
+            ),
+          )
         ],
       ),
     );
@@ -248,8 +234,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
         backgroundColor: kGrey00,
         appBar: AppBar(
-          backgroundColor: kGrey00,
+          backgroundColor: Colors.transparent,
           foregroundColor: kWhiteColor,
+          scrolledUnderElevation: 0,
           title: Row(
             children: [
               Text(
@@ -272,8 +259,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_outlined,
-                color: Colors.black),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_outlined,
+            ),
             onPressed: () {
               socket.close();
               socket.disconnect();
@@ -316,8 +304,8 @@ class _ChatScreenState extends State<ChatScreen> {
               }
               if (state is FetchMessagesSuccess) {
                 return state.messages.isNotEmpty
-                    ? Stack(
-                        alignment: Alignment.bottomCenter,
+                    ? Column(
+                        // alignment: Alignment.bottomCenter,
                         children: [
                           Expanded(
                             child: GestureDetector(
@@ -330,7 +318,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 itemBuilder: (BuildContext context, int index) {
                                   if (index == state.messages.length) {
                                     return Container(
-                                      height: 180,
+                                      height: 100,
                                     );
                                   }
                                   return _buildMessageBubble(
