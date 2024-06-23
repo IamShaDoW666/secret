@@ -13,22 +13,26 @@ class BuildTextField extends StatelessWidget {
   final bool enabled;
   final Color fillColor;
   final Color hintColor;
+  final Color textColor;
   final int? maxLength;
+  final int? maxLines;
   final Function onChange;
 
   const BuildTextField(
       {super.key,
-        required this.hint,
-        this.controller,
-        required this.inputType,
-        this.prefixIcon,
-        this.suffixIcon,
-        this.obscureText = false,
-        this.enabled = true,
-        this.fillColor = kWhiteColor,
-        this.hintColor = kGrey1,
-        this.maxLength,
-        required this.onChange});
+      required this.hint,
+      this.controller,
+      required this.inputType,
+      this.prefixIcon,
+      this.suffixIcon,
+      this.textColor = kBlackColor,
+      this.obscureText = false,
+      this.enabled = true,
+      this.fillColor = kWhiteColor,
+      this.hintColor = kGrey1,
+      this.maxLength,
+      this.maxLines = 1,
+      required this.onChange});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +44,7 @@ class BuildTextField extends StatelessWidget {
       keyboardType: inputType,
       obscureText: obscureText,
       maxLength: maxLength,
-      maxLines: inputType == TextInputType.multiline ? 3 : 1,
+      maxLines: maxLines,
       controller: controller,
       enabled: enabled,
       decoration: InputDecoration(
@@ -48,7 +52,7 @@ class BuildTextField extends StatelessWidget {
         fillColor: fillColor,
         filled: true,
         contentPadding:
-        const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10),
+            const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10),
         hintText: hint,
         floatingLabelBehavior: FloatingLabelBehavior.always,
         hintStyle: TextStyle(
@@ -88,10 +92,10 @@ class BuildTextField extends StatelessWidget {
         hoverColor: kWhiteColor,
       ),
       cursorColor: kPrimaryColor,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: textMedium,
         fontWeight: FontWeight.normal,
-        color: kBlackColor,
+        color: textColor,
       ),
     );
   }

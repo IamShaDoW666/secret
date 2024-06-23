@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
                   theme: ThemeData(
                     fontFamily: 'Sora',
                     visualDensity: VisualDensity.adaptivePlatformDensity,
-                    canvasColor: Colors.transparent,
+                    canvasColor: Colors.black,
                     colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
                     useMaterial3: true,
                   ),

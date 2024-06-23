@@ -1,10 +1,14 @@
+import 'dart:ui';
+
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:task_manager_app/components/build_text_field.dart';
 import 'package:task_manager_app/components/widgets.dart';
 import 'package:task_manager_app/message/data/local/model/message_model.dart';
 import 'package:task_manager_app/message/presentation/bloc/messages_bloc.dart';
@@ -103,9 +107,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     focusNode.addListener(() {
-      if (focusNode.hasFocus) {
+      if (!focusNode.hasFocus) {
         setState(() {
-          // show = false;
+          print("NO FOCUSS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         });
       }
     });
@@ -140,80 +144,100 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildTextComposer() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: TextField(
-              keyboardType: TextInputType.multiline,
-              maxLines: null,
-              focusNode: focusNode,
-              controller: messageController,
-              onSubmitted: (value) {},
-              decoration: const InputDecoration.collapsed(
-                hintText: 'Send a message',
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Expanded(
+                child: BuildTextField(
+                  hint: "Send a message",
+                  inputType: TextInputType.multiline,
+                  maxLines: null,
+                  hintColor: kGrey00,
+                  fillColor: kGrey0,
+                  textColor: kWhiteColor,
+                  onChange: () {},
+                  controller: messageController,
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: const BoxDecoration(
+                    color: kPrimaryColor,
+                    borderRadius: BorderRadius.all(Radius.circular(25))),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.send,
+                    color: kWhiteColor,
+                  ),
+                  onPressed: () => _handleSubmitted(messageController.text),
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: () => _handleSubmitted(messageController.text),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildMessageBubble(MessageModel message) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: message.username == 'Malu'
-                ? Colors.pink.shade100.withAlpha(150)
-                : Colors.blue.shade100.withAlpha(150)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Container(
-            //   margin: const EdgeInsets.only(right: 16.0),
-            //   child: CircleAvatar(
-            //     child: Text(
-            //       message.username,
-            //       style: const TextStyle(fontSize: 8),
-            //     ),
-            //   ),
-            // ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(message.username,
-                      style: Theme.of(context).textTheme.titleSmall),
-                  Container(
-                    margin: const EdgeInsets.only(top: 5.0),
-                    child: Text(
-                      message.message,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
+      padding: const EdgeInsets.all(4),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      // alignment: message.sent ? Alignment.centerRight : Alignment.centerLeft,
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: message.sent ? kPrimaryColor : kGrey0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          // Container(
+          //   margin: const EdgeInsets.only(right: 16.0),
+          //   child: CircleAvatar(
+          //     child: Text(
+          //       message.username,
+          //       style: const TextStyle(fontSize: 8),
+          //     ),
+          //   ),
+          // ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(message.username,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall!
+                        .copyWith(color: kWhiteColor)),
+                Container(
+                  margin: const EdgeInsets.only(top: 5.0),
+                  child: Text(
+                    message.message,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium!
+                        .copyWith(color: kWhiteColor),
                   ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Text(
-                      message.time,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall!
-                          .copyWith(color: Colors.black54),
-                    ),
-                  )
-                ],
-              ).paddingSymmetric(horizontal: 8, vertical: 4),
-            ),
-          ],
-        ),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Text(
+                    message.time,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall!
+                        .copyWith(color: kGrey2),
+                  ),
+                )
+              ],
+            ).paddingSymmetric(horizontal: 8, vertical: 4),
+          ),
+        ],
       ),
     );
   }
@@ -222,13 +246,16 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     return Scaffold(
+        backgroundColor: kGrey00,
         appBar: AppBar(
+          backgroundColor: kGrey00,
+          foregroundColor: kWhiteColor,
           title: Row(
             children: [
               Text(
                 connected ? "Connected" : "Disconnected",
                 style: TextStyle(
-                    color: connected ? Colors.black : Colors.redAccent),
+                    color: connected ? kWhiteColor : Colors.redAccent),
               ),
               16.width,
               inChat
@@ -260,22 +287,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   context.read<MessagesBloc>().add(ClearMessagesEvent());
                 },
                 icon: const Icon(Icons.clear_all)),
-            connected
-                ? const Icon(
-                    Icons.check_circle,
-                    color: Colors.greenAccent,
-                  ).paddingAll(8)
-                : IconButton(
-                    onPressed: () {
-                      socket.close();
-                      socket.disconnect();
-                      socket.dispose();
-                      connectSocket();
-                    },
-                    icon: const Icon(
-                      Icons.signal_wifi_connected_no_internet_4_outlined,
-                      color: Colors.red,
-                    ).paddingAll(8))
           ],
         ),
         body: Center(
@@ -305,25 +316,29 @@ class _ChatScreenState extends State<ChatScreen> {
               }
               if (state is FetchMessagesSuccess) {
                 return state.messages.isNotEmpty
-                    ? Column(
+                    ? Stack(
+                        alignment: Alignment.bottomCenter,
                         children: [
-                          Flexible(
-                            child: ListView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(8.0),
-                              itemCount: state.messages.length + 1,
-                              itemBuilder: (BuildContext context, int index) {
-                                if (index == state.messages.length) {
-                                  return Container(
-                                    height: 100,
-                                  );
-                                }
-                                return _buildMessageBubble(
-                                    state.messages[index]);
-                              },
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => FocusScope.of(context).unfocus(),
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                padding: const EdgeInsets.all(8.0),
+                                itemCount: state.messages.length + 1,
+                                itemBuilder: (BuildContext context, int index) {
+                                  if (index == state.messages.length) {
+                                    return Container(
+                                      height: 180,
+                                    );
+                                  }
+                                  return _buildMessageBubble(
+                                      state.messages[index]);
+                                },
+                              ),
                             ),
                           ),
-                          const Divider(height: 1.0),
                           _buildTextComposer(),
                         ],
                       )
