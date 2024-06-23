@@ -1,7 +1,6 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -11,6 +10,7 @@ import 'package:task_manager_app/message/data/local/model/message_model.dart';
 import 'package:task_manager_app/message/presentation/bloc/messages_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_manager_app/utils/color_palette.dart';
+import 'package:task_manager_app/utils/constants.dart';
 import 'package:task_manager_app/utils/font_sizes.dart';
 
 import '../../../utils/util.dart';
@@ -31,50 +31,70 @@ class _ChatScreenState extends State<ChatScreen> {
   bool inChat = false;
 
   void connectSocket() {
-    socket = io.io("https://chatt.foodonspot.online", <String, dynamic>{
-      // https://chatt.foodonspot.online
-      'transports': ['websocket'],
-      'autoConnect': false
-    });
+    socket = io.io(
+        "http://192.168.18.38:5000",
+        io.OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .setQuery({'username': Constants.username})
+            .build());
     socket.connect();
+
     socket.onConnect((data) {
       setState(() {
         connected = true;
-        socket.emit("JOINED");
       });
-      socket.on("ROOM_MESSAGE", (data) {
+
+      // New message event
+      socket.on(EVENTS.newMessage, (data) {
         var message = MessageModel(
-            message: data["message"], time: data["time"], username: "Milan");
+            message: data["message"],
+            time: data["time"],
+            username: data["username"]);
         context
             .read<MessagesBloc>()
             .add(AddNewMessageEvent(messageModel: message));
         _scrollController.animateTo(_scrollController.position.maxScrollExtent,
             duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       });
-      socket.on("ROOMS", (data) {
-        setState(() {
-          inChat = !inChat;
-        });
-      });
-      socket.on("IN_CHAT", (data) {
-        setState(() {
-          inChat = true;
-        });
-      });
-      socket.on("LEFT_CHAT", (data) {
-        setState(() {
-          inChat = false;
-        });
+
+      socket.on(EVENTS.connections, (data) {
+        if (data["connections"] > 1) {
+          setState(() {
+            inChat = true;
+          });
+        } else {
+          setState(() {
+            inChat = false;
+          });
+        }
       });
     });
 
+    socket.on(EVENTS.upstream, (data) {
+      List<MessageModel>? messages = List.empty();
+      messages = (data as List).map((i) => MessageModel.fromJson(i)).toList();
+      for (var message in messages) {
+        if (message.username != Constants.username) {
+          context
+              .read<MessagesBloc>()
+              .add(AddNewMessageEvent(messageModel: message));
+        }
+      }
+      socket.emit(EVENTS.downstream, Constants.username);
+    });
+
     socket.onConnectError((data) {
-      print(data.toString());
       setState(() {
         connected = false;
+        inChat = false;
       });
     });
     socket.onDisconnect((data) {
+      setState(() {
+        inChat = false;
+        connected = false;
+      });
       // context.read<MessagesBloc>().add(ClearMessagesEvent());
     });
   }
@@ -106,10 +126,10 @@ class _ChatScreenState extends State<ChatScreen> {
     var message = MessageModel(
         message: text,
         time: DateFormat('HH:mm').format(DateTime.now()),
-        username: "Malu",
+        username: Constants.username,
         sent: true);
     context.read<MessagesBloc>().add(AddNewMessageEvent(messageModel: message));
-    socket.emit("SEND_ROOM_MESSAGE", <String, dynamic>{
+    socket.emit(EVENTS.sendMessage, <String, dynamic>{
       "roomId": "1",
       "message": text,
       "username": message.username
@@ -151,7 +171,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Container(
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: message.sent
+            color: message.username == 'Malu'
                 ? Colors.pink.shade100.withAlpha(150)
                 : Colors.blue.shade100.withAlpha(150)),
         child: Row(

@@ -24,7 +24,7 @@ class MessageModel {
       username: json["username"],
       message: json["message"],
       time: json["time"],
-      sent: json["sent"],
+      sent: json["sent"] ?? false,
     );
   }
 }
