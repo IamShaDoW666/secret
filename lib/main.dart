@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nb_utils/nb_utils.dart';
 import 'package:task_manager_app/firebase_api.dart';
 import 'package:task_manager_app/message/data/local/data_sources/messages_data_provider.dart';
 import 'package:task_manager_app/message/data/repository/message_repository.dart';
@@ -17,32 +17,28 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initialize();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   Bloc.observer = BlocStateOberver();
-  SharedPreferences preferences = await SharedPreferences.getInstance();
   await FirebaseApi().initNotifications();
-  runApp(MyApp(
-    preferences: preferences,
-  ));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final SharedPreferences preferences;
-
-  const MyApp({super.key, required this.preferences});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
         create: (context) =>
-            TaskRepository(taskDataProvider: TaskDataProvider(preferences)),
+            TaskRepository(taskDataProvider: TaskDataProvider()),
         child: BlocProvider(
             create: (context) => TasksBloc(context.read<TaskRepository>()),
             child: RepositoryProvider(
-              create: (context) => MessageRepository(
-                  messageDataProvider: MessageDataProvider(preferences)),
+              create: (context) =>
+                  MessageRepository(messageDataProvider: MessageDataProvider()),
               child: BlocProvider(
                 create: (context) =>
                     MessagesBloc(context.read<MessageRepository>()),

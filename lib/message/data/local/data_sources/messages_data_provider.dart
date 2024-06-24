@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:nb_utils/nb_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_app/message/data/local/model/message_model.dart';
 import 'package:task_manager_app/utils/exception_handler.dart';
@@ -7,14 +8,13 @@ import '../../../../utils/constants.dart';
 
 class MessageDataProvider {
   List<MessageModel> messages = [];
-  SharedPreferences? prefs;
 
-  MessageDataProvider(this.prefs);
+  MessageDataProvider();
 
   Future<List<MessageModel>> getMessages() async {
     try {
       final List<String>? savedMessages =
-          prefs!.getStringList(Constants.messageKey);
+          getStringListAsync(Constants.messageKey);
       if (savedMessages != null) {
         messages = savedMessages
             .map((messageJson) =>
@@ -32,7 +32,8 @@ class MessageDataProvider {
       messages.add(messageModel);
       final List<String> messageJsonList =
           messages.map((message) => json.encode(message.toJson())).toList();
-      await prefs!.setStringList(Constants.messageKey, messageJsonList);
+      // await prefs!.setStringList(Constants.messageKey, messageJsonList);
+      await setValue(Constants.messageKey, messageJsonList);
     } catch (exception) {
       throw Exception(handleException(exception));
     }
@@ -43,7 +44,8 @@ class MessageDataProvider {
       messages.remove(messageModel);
       final List<String> messageJsonList =
           messages.map((message) => json.encode(message.toJson())).toList();
-      prefs!.setStringList(Constants.messageKey, messageJsonList);
+      // prefs!.setStringList(Constants.messageKey, messageJsonList);
+      await setValue(Constants.messageKey, messageJsonList);
       return messages;
     } catch (exception) {
       throw Exception(handleException(exception));
@@ -55,7 +57,9 @@ class MessageDataProvider {
       messages.clear();
       final List<String> messageJsonList =
           messages.map((message) => json.encode(message.toJson())).toList();
-      prefs!.setStringList(Constants.messageKey, messageJsonList);
+      print(messageJsonList);
+      // prefs!.setStringList(Constants.messageKey, messageJsonList);
+      await setValue(Constants.messageKey, messageJsonList);
       return messages;
     } catch (exception) {
       throw Exception(handleException(exception));

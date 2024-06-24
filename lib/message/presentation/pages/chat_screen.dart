@@ -35,7 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void connectSocket() {
     socket = io.io(
-        "http://192.168.18.38:5000",
+        Constants.localhost,
         io.OptionBuilder()
             .setTransports(['websocket'])
             .disableAutoConnect()
@@ -46,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.onConnect((data) {
       setState(() {
         connected = true;
+        if (getStringListAsync(Constants.messageKey)!.isNotEmpty) scrollDown();
       });
 
       // New message event
@@ -83,10 +84,13 @@ class _ChatScreenState extends State<ChatScreen> {
               .add(AddNewMessageEvent(messageModel: message));
         }
       }
+      // scrollDown();
+      _scrollController.jumpToBottom();
       socket.emit(EVENTS.downstream, Constants.username);
     });
 
     socket.onConnectError((data) {
+      // print(data);
       setState(() {
         connected = false;
         inChat = false;
@@ -123,8 +127,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void scrollDown() {
-    print("SCROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL");
-    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+    _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent + 1000,
         duration: const Duration(milliseconds: 800),
         curve: Curves.fastOutSlowIn);
   }
@@ -165,6 +169,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   inputType: TextInputType.multiline,
                   maxLines: null,
                   hintColor: kGrey00,
+                  focusNode: focusNode,
                   fillColor: kGrey0,
                   textColor: kWhiteColor,
                   onChange: (val) {},
@@ -275,6 +280,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   context.read<MessagesBloc>().add(ClearMessagesEvent());
                 },
                 icon: const Icon(Icons.clear_all)),
+            IconButton(
+                onPressed: () {
+                  socket.emit(EVENTS.poke, <String, dynamic>{
+                    "username": Constants.username,
+                  });
+                },
+                icon: const Icon(Icons.notifications_active)),
           ],
         ),
         body: Center(
@@ -314,13 +326,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               child: ListView.builder(
                                 controller: _scrollController,
                                 padding: const EdgeInsets.all(8.0),
-                                itemCount: state.messages.length + 1,
+                                itemCount: state.messages.length,
                                 itemBuilder: (BuildContext context, int index) {
-                                  if (index == state.messages.length) {
-                                    return Container(
-                                      height: 100,
-                                    );
-                                  }
+                                  // if (index == state.messages.length) {
+                                  //   return Container(
+                                  //     height: 100,
+                                  //   );
+                                  // }
                                   return _buildMessageBubble(
                                       state.messages[index]);
                                 },
@@ -330,36 +342,31 @@ class _ChatScreenState extends State<ChatScreen> {
                           _buildTextComposer(),
                         ],
                       )
-                    : Center(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/svgs/tasks.svg',
-                              height: size.height * .20,
-                              width: size.width,
-                            ),
-                            const SizedBox(
-                              height: 50,
-                            ),
-                            buildText(
-                                'No Messages',
-                                kBlackColor,
-                                textBold,
-                                FontWeight.w600,
-                                TextAlign.center,
-                                TextOverflow.clip),
-                            buildText(
-                                'Send a message',
-                                kBlackColor.withOpacity(.5),
-                                textSmall,
-                                FontWeight.normal,
-                                TextAlign.center,
-                                TextOverflow.clip),
-                            _buildTextComposer(),
-                          ],
-                        ),
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            children: [
+                              const SizedBox(
+                                height: 50,
+                              ),
+                              SvgPicture.asset(
+                                'assets/svgs/tasks.svg',
+                                height: size.height * .20,
+                                width: size.width,
+                              ),
+                              buildText(
+                                  'No Messages',
+                                  kWhiteColor,
+                                  textBold,
+                                  FontWeight.w600,
+                                  TextAlign.center,
+                                  TextOverflow.clip)
+                            ],
+                          ).expand(),
+                          _buildTextComposer(),
+                        ],
                       );
               }
               return Container();

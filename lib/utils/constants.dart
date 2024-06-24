@@ -2,6 +2,9 @@ class Constants {
   static const String taskKey = 'tasks';
   static const String messageKey = 'messages';
   static const String username = "Malu";
+  static const String firebaseToken = "firebase-token";
+  static const String localhost = "http://192.168.18.38:5000";
+  static const String livehost = "https://chatt.foodonspot.online";
 }
 
 class EVENTS {
@@ -10,4 +13,5 @@ class EVENTS {
   static const String upstream = 'UPSTREAM';
   static const String downstream = 'DOWNSTREAM';
   static const String sendMessage = 'SEND_MESSAGE';
+  static const String poke = 'POKE';
 }

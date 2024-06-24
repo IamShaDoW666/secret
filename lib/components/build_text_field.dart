@@ -17,6 +17,7 @@ class BuildTextField extends StatelessWidget {
   final int? maxLength;
   final int? maxLines;
   final Function onChange;
+  final FocusNode? focusNode;
 
   const BuildTextField(
       {super.key,
@@ -32,6 +33,7 @@ class BuildTextField extends StatelessWidget {
       this.hintColor = kGrey1,
       this.maxLength,
       this.maxLines = 1,
+      this.focusNode,
       required this.onChange});
 
   @override
@@ -46,6 +48,7 @@ class BuildTextField extends StatelessWidget {
       maxLength: maxLength,
       maxLines: maxLines,
       controller: controller,
+      focusNode: focusNode,
       enabled: enabled,
       decoration: InputDecoration(
         counterText: "",

@@ -11,7 +11,6 @@ import 'package:task_manager_app/utils/color_palette.dart';
 import 'package:task_manager_app/utils/util.dart';
 
 import '../../../components/widgets.dart';
-import '../../../routes/pages.dart';
 import '../../../utils/font_sizes.dart';
 
 class TasksScreen extends StatefulWidget {
@@ -263,7 +262,8 @@ class _TasksScreenState extends State<TasksScreen> {
                 color: kPrimaryColor,
               ),
               onPressed: () {
-                Navigator.pushNamed(context, Pages.createNewTask);
+                Navigator.pushNamed(context, '/chat');
+                // Navigator.pushNamed(context, Pages.createNewTask);
               }),
         )));
   }

@@ -50,6 +50,7 @@ dependencies:
   firebase_messaging: ^15.0.1
   mobx: ^2.3.3+2
   avatar_glow: ^3.0.1
+  http: ^1.2.1
 
 dev_dependencies:
   flutter_test:
