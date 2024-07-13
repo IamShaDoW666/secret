@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:nb_utils/nb_utils.dart';
 import 'package:task_manager_app/components/custom_app_bar.dart';
+import 'package:task_manager_app/routes/pages.dart';
 import 'package:task_manager_app/tasks/presentation/bloc/tasks_bloc.dart';
 import 'package:task_manager_app/components/build_text_field.dart';
 import 'package:task_manager_app/tasks/presentation/widget/task_item_view.dart';
 import 'package:task_manager_app/utils/color_palette.dart';
+import 'package:task_manager_app/utils/constants.dart';
 import 'package:task_manager_app/utils/util.dart';
 
 import '../../../components/widgets.dart';
@@ -43,6 +46,9 @@ class _TasksScreenState extends State<TasksScreen> {
             title: 'Task Manager',
             showBackArrow: false,
             actionWidgets: [
+              if (!Constants.productionEnv)
+                Text(getStringAsync(Constants.usernameKey)),
+              10.width,
               PopupMenuButton<int>(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
@@ -145,6 +151,18 @@ class _TasksScreenState extends State<TasksScreen> {
                   child: SvgPicture.asset('assets/svgs/filter.svg'),
                 ),
               ),
+              if (!Constants.productionEnv)
+                IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, Pages.chat);
+                    },
+                    icon: const Icon(Icons.chat)),
+              if (!Constants.productionEnv)
+                IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, Pages.changeUser);
+                    },
+                    icon: const Icon(Icons.person))
             ],
           ),
           body: GestureDetector(
@@ -197,7 +215,14 @@ class _TasksScreenState extends State<TasksScreen> {
                                     onChange: (value) {
                                       if (value == "secret") {
                                         searchController.clear();
-                                        Navigator.pushNamed(context, '/chat');
+                                        Navigator.pushNamed(
+                                            context, Pages.chat);
+                                        return;
+                                      }
+                                      if (value == "username") {
+                                        searchController.clear();
+                                        Navigator.pushNamed(
+                                            context, Pages.changeUser);
                                         return;
                                       }
                                       context.read<TasksBloc>().add(
@@ -262,8 +287,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 color: kPrimaryColor,
               ),
               onPressed: () {
-                Navigator.pushNamed(context, '/chat');
-                // Navigator.pushNamed(context, Pages.createNewTask);
+                Navigator.pushNamed(context, Pages.createNewTask);
               }),
         )));
   }

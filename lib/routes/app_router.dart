@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager_app/change_user_screen.dart';
 import 'package:task_manager_app/routes/pages.dart';
 import 'package:task_manager_app/splash_screen.dart';
 import 'package:task_manager_app/tasks/data/local/model/task_model.dart';
@@ -32,6 +33,11 @@ Route onGenerateRoute(RouteSettings routeSettings) {
       // final args = routeSettings.arguments as TaskModel;
       return MaterialPageRoute(
         builder: (context) => const ChatScreen(),
+      );
+    case Pages.changeUser:
+      // final args = routeSettings.arguments as TaskModel;
+      return MaterialPageRoute(
+        builder: (context) => const ChangeUserScreen(),
       );
     default:
       return MaterialPageRoute(

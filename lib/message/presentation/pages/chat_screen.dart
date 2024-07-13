@@ -32,15 +32,27 @@ class _ChatScreenState extends State<ChatScreen> {
   final FocusNode focusNode = FocusNode();
   bool connected = false;
   bool inChat = false;
-
+  final String deviceUsername = getStringAsync(Constants.usernameKey);
   void connectSocket() {
+    print('--------------------------- ${deviceUsername}');
+    print(io.OptionBuilder()
+        .setTransports(['websocket'])
+        .disableAutoConnect()
+        .setQuery({'username': deviceUsername})
+        .build());
     socket = io.io(
-        Constants.localhost,
+        Constants.productionEnv ? Constants.livehost : Constants.localhost,
         io.OptionBuilder()
             .setTransports(['websocket'])
             .disableAutoConnect()
-            .setQuery({'username': Constants.username})
+            .setQuery({'username': deviceUsername})
             .build());
+    // io.OptionBuilder()
+    //     .setTransports(['websocket'])
+    //     .disableAutoConnect()
+    //     .setQuery({'username': deviceUsername})
+    //     .build());
+    print('+++++++++++++++++++++++++++ ${deviceUsername}');
     socket.connect();
 
     socket.onConnect((data) {
@@ -78,7 +90,7 @@ class _ChatScreenState extends State<ChatScreen> {
       List<MessageModel>? messages = List.empty();
       messages = (data as List).map((i) => MessageModel.fromJson(i)).toList();
       for (var message in messages) {
-        if (message.username != Constants.username) {
+        if (message.username != deviceUsername) {
           context
               .read<MessagesBloc>()
               .add(AddNewMessageEvent(messageModel: message));
@@ -86,7 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       // scrollDown();
       _scrollController.jumpToBottom();
-      socket.emit(EVENTS.downstream, Constants.username);
+      socket.emit(EVENTS.downstream, deviceUsername);
     });
 
     socket.onConnectError((data) {
@@ -141,7 +153,7 @@ class _ChatScreenState extends State<ChatScreen> {
     var message = MessageModel(
         message: text,
         time: DateFormat('HH:mm').format(DateTime.now()),
-        username: Constants.username,
+        username: deviceUsername,
         sent: true);
     context.read<MessagesBloc>().add(AddNewMessageEvent(messageModel: message));
     socket.emit(EVENTS.sendMessage, <String, dynamic>{
@@ -283,7 +295,7 @@ class _ChatScreenState extends State<ChatScreen> {
             IconButton(
                 onPressed: () {
                   socket.emit(EVENTS.poke, <String, dynamic>{
-                    "username": Constants.username,
+                    "username": deviceUsername,
                   });
                 },
                 icon: const Icon(Icons.notifications_active)),

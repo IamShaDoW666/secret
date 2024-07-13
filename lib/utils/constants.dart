@@ -1,10 +1,12 @@
 class Constants {
   static const String taskKey = 'tasks';
   static const String messageKey = 'messages';
-  static const String username = "Malu";
+  // static const String username = "Milan";
   static const String firebaseToken = "firebase-token";
   static const String localhost = "http://192.168.18.38:5000";
   static const String livehost = "https://chatt.foodonspot.online";
+  static const bool productionEnv = true;
+  static const String usernameKey = "username";
 }
 
 class EVENTS {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:nb_utils/nb_utils.dart';
+import 'package:task_manager_app/utils/constants.dart';
 import 'components/widgets.dart';
 import 'routes/pages.dart';
 import 'utils/color_palette.dart';
@@ -20,11 +22,20 @@ class _SplashScreenState extends State<SplashScreen> {
 
   startTimer() async {
     Future.delayed(const Duration(milliseconds: 3000), () {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        Pages.home,
-        (route) => false,
-      );
+      String user = getStringAsync(Constants.usernameKey);
+      if (user.isNotEmpty) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          Pages.home,
+          (route) => false,
+        );
+      } else {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          Pages.changeUser,
+          (route) => false,
+        );
+      }
     });
   }
 

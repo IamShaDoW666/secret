@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:nb_utils/nb_utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_app/message/data/local/model/message_model.dart';
 import 'package:task_manager_app/utils/exception_handler.dart';
 

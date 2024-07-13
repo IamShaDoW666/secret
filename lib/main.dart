@@ -13,11 +13,15 @@ import 'package:task_manager_app/tasks/data/repository/task_repository.dart';
 import 'package:task_manager_app/tasks/presentation/bloc/tasks_bloc.dart';
 import 'package:task_manager_app/utils/color_palette.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:task_manager_app/utils/constants.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initialize();
+  if (getStringAsync(Constants.usernameKey).isEmptyOrNull) {
+    await setValue(Constants.usernameKey, 'Malu');
+  }
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -31,31 +35,34 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-        create: (context) =>
-            TaskRepository(taskDataProvider: TaskDataProvider()),
-        child: BlocProvider(
-            create: (context) => TasksBloc(context.read<TaskRepository>()),
-            child: RepositoryProvider(
-              create: (context) =>
-                  MessageRepository(messageDataProvider: MessageDataProvider()),
-              child: BlocProvider(
-                create: (context) =>
-                    MessagesBloc(context.read<MessageRepository>()),
-                child: MaterialApp(
-                  title: 'Task Manager',
-                  debugShowCheckedModeBanner: false,
-                  initialRoute: Pages.initial,
-                  onGenerateRoute: onGenerateRoute,
-                  theme: ThemeData(
-                    fontFamily: 'Sora',
-                    visualDensity: VisualDensity.adaptivePlatformDensity,
-                    canvasColor: Colors.black,
-                    colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
-                    useMaterial3: true,
+    return RestartAppWidget(
+      child: RepositoryProvider(
+          create: (context) =>
+              TaskRepository(taskDataProvider: TaskDataProvider()),
+          child: BlocProvider(
+              create: (context) => TasksBloc(context.read<TaskRepository>()),
+              child: RepositoryProvider(
+                create: (context) => MessageRepository(
+                    messageDataProvider: MessageDataProvider()),
+                child: BlocProvider(
+                  create: (context) =>
+                      MessagesBloc(context.read<MessageRepository>()),
+                  child: MaterialApp(
+                    title: 'Task Manager',
+                    debugShowCheckedModeBanner: false,
+                    initialRoute: Pages.initial,
+                    onGenerateRoute: onGenerateRoute,
+                    theme: ThemeData(
+                      fontFamily: 'Sora',
+                      visualDensity: VisualDensity.adaptivePlatformDensity,
+                      canvasColor: Colors.black,
+                      colorScheme:
+                          ColorScheme.fromSeed(seedColor: kPrimaryColor),
+                      useMaterial3: true,
+                    ),
                   ),
                 ),
-              ),
-            )));
+              ))),
+    );
   }
 }
