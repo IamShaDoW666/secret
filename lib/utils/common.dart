@@ -10,3 +10,7 @@ Future<String?> getStoredToken() async {
 Future<void> storeTokenLocally(String token) async {
   setValue(Constants.firebaseToken, token);
 }
+
+String getReciever(String user) {
+  return user == "Milan" ? "Malu" : "Milan";
+}

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:avatar_glow/avatar_glow.dart';
@@ -7,12 +8,14 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:http/http.dart' as http;
 import 'package:task_manager_app/components/build_text_field.dart';
 import 'package:task_manager_app/components/widgets.dart';
 import 'package:task_manager_app/message/data/local/model/message_model.dart';
 import 'package:task_manager_app/message/presentation/bloc/messages_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_manager_app/utils/color_palette.dart';
+import 'package:task_manager_app/utils/common.dart';
 import 'package:task_manager_app/utils/constants.dart';
 import 'package:task_manager_app/utils/font_sizes.dart';
 
@@ -32,6 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final FocusNode focusNode = FocusNode();
   bool connected = false;
   bool inChat = false;
+  String lastOnline = '-';
   final String deviceUsername = getStringAsync(Constants.usernameKey);
   void connectSocket() {
     print('--------------------------- ${deviceUsername}');
@@ -79,6 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
             inChat = true;
           });
         } else {
+          getLastOnline();
           setState(() {
             inChat = false;
           });
@@ -114,6 +119,31 @@ class _ChatScreenState extends State<ChatScreen> {
         connected = false;
       });
     });
+  }
+
+  Future<void> getLastOnline() async {
+    var res = await http.get(
+      Uri.parse(
+          '${Constants.productionEnv ? Constants.livehost : Constants.localhost}/last-online?username=${getReciever(deviceUsername)}'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+    if (res.statusCode == 200) {
+      Map<String, dynamic> jsonResponse = json.decode(res.body);
+      DateTime utcTime = DateTime.parse(jsonResponse['data']['lastOnline']);
+      int differenceInDays = DateTime.now().difference(utcTime).inDays;
+      String formattedTime;
+      if (differenceInDays == 0) {
+        // Display in 12-hour format if it's today
+        formattedTime = DateFormat('h:mm a').format(utcTime.toLocal());
+      } else {
+        formattedTime = DateFormat('dd MMM h:mm a').format(utcTime.toLocal());
+      }
+      setState(() {
+        lastOnline = 'Last Online: $formattedTime';
+      });
+    }
   }
 
   @override
@@ -256,10 +286,20 @@ class _ChatScreenState extends State<ChatScreen> {
           scrolledUnderElevation: 0,
           title: Row(
             children: [
-              Text(
-                connected ? "Connected" : "Disconnected",
-                style: TextStyle(
-                    color: connected ? kWhiteColor : Colors.redAccent),
+              Column(
+                children: [
+                  Text(
+                    connected ? "Connected" : "Disconnected",
+                    style: TextStyle(
+                        color: connected ? kWhiteColor : Colors.redAccent),
+                  ),
+                  (connected && !inChat)
+                      ? Text(
+                          lastOnline,
+                          style: const TextStyle(color: kGrey2, fontSize: 10),
+                        )
+                      : const Offstage()
+                ],
               ),
               16.width,
               inChat
@@ -341,8 +381,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                 itemCount: state.messages.length,
                                 itemBuilder: (BuildContext context, int index) {
                                   // if (index == state.messages.length) {
-                                  //   return Container(
-                                  //     height: 100,
+                                  //   return Center(
+                                  //     child: Container(
+                                  //       child: Text(
+                                  //         'Last Online: 2:52 AM',
+                                  //         style: primaryTextStyle(
+                                  //             size: 10, color: kGrey1),
+                                  //       ),
+                                  //       height: 25,
+                                  //     ),
                                   //   );
                                   // }
                                   return _buildMessageBubble(
