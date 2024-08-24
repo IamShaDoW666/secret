@@ -182,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
     messageController.clear();
     var message = MessageModel(
         message: text,
-        time: DateFormat('HH:mm').format(DateTime.now()),
+        time: DateTime.now().toString(),
         username: deviceUsername,
         sent: true);
     context.read<MessagesBloc>().add(AddNewMessageEvent(messageModel: message));
@@ -214,7 +214,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   focusNode: focusNode,
                   fillColor: kGrey0,
                   textColor: kWhiteColor,
-                  onChange: (val) {},
+                  onChange: (val) {
+                    setState(() {});
+                  },
                   controller: messageController,
                 ),
               ),
@@ -224,9 +226,25 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: kPrimaryColor,
                     borderRadius: BorderRadius.all(Radius.circular(25))),
                 child: IconButton(
-                  icon: const Icon(
-                    Icons.send,
-                    color: kWhiteColor,
+                  icon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, anim) => RotationTransition(
+                      turns: messageController.text.isEmptyOrNull
+                          ? Tween<double>(begin: 0, end: 1).animate(anim)
+                          : Tween<double>(begin: 0.75, end: 1).animate(anim),
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: messageController.text.isEmptyOrNull
+                        ? const Icon(
+                            Icons.mic,
+                            key: ValueKey(1),
+                            color: kWhiteColor,
+                          )
+                        : const Icon(
+                            Icons.send,
+                            key: ValueKey(2),
+                            color: kWhiteColor,
+                          ),
                   ),
                   onPressed: () => _handleSubmitted(messageController.text),
                 ),
@@ -240,6 +258,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(MessageModel message) {
     var alignment = message.sent ? Alignment.centerRight : Alignment.centerLeft;
+    DateTime utcTime = DateTime.parse(message.time);
+    String formattedTime = DateFormat('h:mm a').format(utcTime.toLocal());
     return Container(
       alignment: alignment,
       child: Column(
@@ -263,7 +283,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 8.height,
                 Text(
-                  message.time,
+                  formattedTime,
                   style: primaryTextStyle(size: 10, color: kGrey1),
                   textAlign: TextAlign.right,
                 )
