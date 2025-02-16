@@ -6,7 +6,7 @@ import 'package:task_manager_app/utils/color_palette.dart';
 import 'package:task_manager_app/utils/constants.dart';
 
 class ChangeUserScreen extends StatelessWidget {
-  const ChangeUserScreen({Key? key}) : super(key: key);
+  const ChangeUserScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

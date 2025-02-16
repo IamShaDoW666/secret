@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -22,11 +24,15 @@ Future<void> main() async {
   if (getStringAsync(Constants.usernameKey).isEmptyOrNull) {
     await setValue(Constants.usernameKey, 'Malu');
   }
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  if (Platform.isAndroid) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   Bloc.observer = BlocStateOberver();
-  await FirebaseApi().initNotifications();
+  if (Platform.isAndroid) {
+    await FirebaseApi().initNotifications();
+  }
   runApp(const MyApp());
 }
 

@@ -46,7 +46,7 @@ class _TasksScreenState extends State<TasksScreen> {
             title: 'Task Manager',
             showBackArrow: false,
             actionWidgets: [
-              if (!Constants.productionEnv)
+              if (!getBoolAsync(Constants.environment))
                 Text(getStringAsync(Constants.usernameKey)),
               10.width,
               PopupMenuButton<int>(
@@ -151,13 +151,13 @@ class _TasksScreenState extends State<TasksScreen> {
                   child: SvgPicture.asset('assets/svgs/filter.svg'),
                 ),
               ),
-              if (!Constants.productionEnv)
+              if (!getBoolAsync(Constants.environment))
                 IconButton(
                     onPressed: () {
                       Navigator.pushNamed(context, Pages.chat);
                     },
                     icon: const Icon(Icons.chat)),
-              if (!Constants.productionEnv)
+              if (!getBoolAsync(Constants.environment))
                 IconButton(
                     onPressed: () {
                       Navigator.pushNamed(context, Pages.changeUser);
@@ -217,6 +217,15 @@ class _TasksScreenState extends State<TasksScreen> {
                                         searchController.clear();
                                         Navigator.pushNamed(
                                             context, Pages.chat);
+                                        return;
+                                      }
+                                      if (value == "switchmode") {
+                                        searchController.clear();
+                                        setValue(
+                                            Constants.environment,
+                                            !getBoolAsync(
+                                                Constants.environment));
+                                        RestartAppWidget.init(context);
                                         return;
                                       }
                                       if (value == "username") {

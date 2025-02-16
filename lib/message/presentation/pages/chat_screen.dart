@@ -45,7 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
         .setQuery({'username': deviceUsername})
         .build());
     socket = io.io(
-        Constants.productionEnv ? Constants.livehost : Constants.localhost,
+        getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost,
         io.OptionBuilder()
             .setTransports(['websocket'])
             .disableAutoConnect()
@@ -124,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> getLastOnline() async {
     var res = await http.get(
       Uri.parse(
-          '${Constants.productionEnv ? Constants.livehost : Constants.localhost}/last-online?username=${getReciever(deviceUsername)}'),
+          '${getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost}/last-online?username=${getReciever(deviceUsername)}'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

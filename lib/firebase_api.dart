@@ -11,7 +11,7 @@ Future<http.Response> sendSubscription(String token) {
   String username = getStringAsync(Constants.usernameKey);
   return http.post(
     Uri.parse(
-        '${Constants.productionEnv ? Constants.livehost : Constants.localhost}/subscribe'),
+        '${getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost}/subscribe'),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -23,7 +23,7 @@ Future<String?> getTokenFromServer() async {
   String username = getStringAsync(Constants.usernameKey);
   var res = await http.get(
     Uri.parse(
-        '${Constants.productionEnv ? Constants.livehost : Constants.localhost}/token?username=$username'),
+        '${getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost}/token?username=$username'),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },

@@ -4,7 +4,7 @@ plugins {
     id 'com.google.gms.google-services'
     // END: FlutterFire Configuration
     id "kotlin-android"
-    id "dev.flutter.flutter-gradle-plugin"
+    id "dev.flutter.flutter-gradle-plugin"    
 }
 
 def localProperties = new Properties()
@@ -27,8 +27,8 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.example.task_manager_app"
-    compileSdkVersion flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    compileSdkVersion = flutter.compileSdkVersion
+    ndkVersion = "28.0.13004108"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

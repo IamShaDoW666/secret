@@ -3,9 +3,10 @@ class Constants {
   static const String messageKey = 'messages';
   // static const String username = "Milan";
   static const String firebaseToken = "firebase-token";
-  static const String localhost = "http://192.168.18.38:5000";
+  static const String localhost = "http://192.168.18.83:5100";
   static const String livehost = "https://chatt.foodonspot.online";
-  static const bool productionEnv = true;
+  static const bool productionEnv = false;
+  static const String environment = "environment";
   static const String usernameKey = "username";
 }
 
