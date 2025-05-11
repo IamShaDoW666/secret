@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:task_manager_app/tasks/data/local/data_sources/tasks_data_provider.dart';
 
 import '../../data/local/model/message_model.dart';
 import '../../data/repository/message_repository.dart';
@@ -14,7 +16,7 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
   MessagesBloc(this.messageRepository)
       : super(FetchMessagesSuccess(messages: const [])) {
     on<AddNewMessageEvent>(_addNewMessage);
-    on<FetchMessageEvent>(_fetchMessages);
+    on<FetchMessageEvent>(_fetchMessages);    
     on<DeleteMessageEvent>(_deleteMessage);
     on<ClearMessagesEvent>(_clearMessages);
   }
@@ -34,12 +36,13 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
     }
   }
 
+
   void _fetchMessages(
       FetchMessageEvent event, Emitter<MessagesState> emit) async {
     // emit(MessagesLoading());
     try {
       final messages = await messageRepository.getMessages();
-      return emit(FetchMessagesSuccess(messages: messages));
+      emit(FetchMessagesSuccess(messages: messages));      
     } catch (exception) {
       emit(LoadMessageFailure(error: exception.toString()));
     }

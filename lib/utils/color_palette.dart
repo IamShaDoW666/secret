@@ -10,8 +10,8 @@ const Color kGrey2 = Color(0xffCCCCCC);
 const Color kGrey3 = Color(0xffEFEFEF);
 
 const Color kSecondaryColor =
-    Color.fromARGB(170, 105, 232, 230); //Color.fromARGB(170, 105, 232, 230)
+    Color.fromARGB(170, 147, 105, 226); //Color.fromARGB(170, 105, 232, 230)
 const Color kPrimaryColor =
-    Color.fromARGB(170, 40, 153, 151); // Color.fromARGB(170, 40, 153, 151)
+    Color.fromARGB(170, 103, 63, 178);// Color.fromARGB(170, 40, 153, 151)
 
 const Color kRed = Color(0xffC5292A);

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -16,14 +17,23 @@ import 'package:task_manager_app/tasks/presentation/bloc/tasks_bloc.dart';
 import 'package:task_manager_app/utils/color_palette.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:task_manager_app/utils/constants.dart';
+import 'package:task_manager_app/utils/logger.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initialize();
-  if (getStringAsync(Constants.usernameKey).isEmptyOrNull) {
-    await setValue(Constants.usernameKey, 'Malu');
-  }
+  await getSharedPref().then((value) {
+    if (!value.containsKey(Constants.usernameKey)) {
+      setValue(Constants.usernameKey, "Malu");
+    }
+    if (!value.containsKey(Constants.environment)) {
+      setValue(Constants.environment, true);
+    }
+    if (!value.containsKey(Constants.localhost)) {
+      setValue(Constants.localhost, "http://192.168.18.38:5100");
+    }
+  });
   if (Platform.isAndroid) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

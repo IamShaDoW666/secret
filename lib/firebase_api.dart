@@ -4,14 +4,21 @@ import 'package:http/http.dart' as http;
 import 'package:nb_utils/nb_utils.dart';
 import 'package:task_manager_app/utils/common.dart';
 import 'package:task_manager_app/utils/constants.dart';
+import 'package:task_manager_app/utils/logger.dart';
 
-Future<void> handleBackgroundMessage(RemoteMessage message) async {}
+Future<void> handleBackgroundMessage(RemoteMessage message) async {
+  // Handle background message
+  logger.d('Handling a background message: ${message.messageId}');
+  // You can also access the data payload here
+  logger.d('Data: ${message.data}');
+  sendDeliveryAck(message.data['messageId']);
+}
 
 Future<http.Response> sendSubscription(String token) {
   String username = getStringAsync(Constants.usernameKey);
   return http.post(
     Uri.parse(
-        '${getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost}/subscribe'),
+        '${getBoolAsync(Constants.environment) ? Constants.livehost : getStringAsync(Constants.localhost)}/subscribe'),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -19,11 +26,23 @@ Future<http.Response> sendSubscription(String token) {
   );
 }
 
+Future<http.Response> sendDeliveryAck(String msgId) {
+  String username = getStringAsync(Constants.usernameKey);
+  return http.post(
+    Uri.parse(
+        '${getBoolAsync(Constants.environment) ? Constants.livehost : getStringAsync(Constants.localhost)}/deliveryAck'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: jsonEncode(<String, String>{'messageId': msgId, 'username': username}),
+  );
+}
+
 Future<String?> getTokenFromServer() async {
   String username = getStringAsync(Constants.usernameKey);
   var res = await http.get(
     Uri.parse(
-        '${getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost}/token?username=$username'),
+        '${getBoolAsync(Constants.environment) ? Constants.livehost : getStringAsync(Constants.localhost)}/token?username=$username'),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
@@ -47,17 +66,22 @@ Future<void> initToken() async {
   final firebaseMessaging = FirebaseMessaging.instance;
   final fCMToken = await firebaseMessaging.getToken();
   String? storedToken = await getStoredToken();
-  String? serverToken = await getTokenFromServer();
+  try {
+    String? serverToken = await getTokenFromServer();
+    if (fCMToken!.isNotEmpty) {
+      if ((fCMToken != storedToken) || (fCMToken != serverToken)) {
+        sendSubscription(fCMToken);
+        await storeTokenLocally(fCMToken);
+        // print('TOOOOOO SAAAAAAAAVEE');
+        // print('$fCMToken $storedToken $serverToken');
+      }
+    }
+  } catch (e) {
+    print('Error: $e');
+  }
   // print('server: $serverToken');
   // print('stored: $storedToken');
   // print('firebase: $fCMToken');
-  if (fCMToken != null) {
-    if ((fCMToken != storedToken) || (fCMToken != serverToken)) {
-      sendSubscription(fCMToken);
-      await storeTokenLocally(fCMToken);
-      // print('TOOOOOO SAAAAAAAAVEE');
-    }
-  }
 }
 
 class FirebaseApi {
@@ -66,14 +90,21 @@ class FirebaseApi {
   Future<void> initNotifications() async {
     await _firebaseMessaging.requestPermission();
     await initToken();
-    FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      logger.d('Message data: ${message.data}');
+      sendDeliveryAck(message.data['messageId']);
+    });
     FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
       String? storedToken = await getStoredToken();
-      String? serverToken = await getTokenFromServer();
+      try {
+        String? serverToken = await getTokenFromServer();
 
-      if ((fcmToken != storedToken) || (fcmToken != serverToken)) {
-        sendSubscription(fcmToken);
-        await storeTokenLocally(fcmToken);
+        if ((fcmToken != storedToken) || (fcmToken != serverToken)) {
+          await sendSubscription(fcmToken);
+          await storeTokenLocally(fcmToken);
+        }
+      } catch (e) {
+        print('Error: $e');
       }
       // Note: This callback is fired at each app startup and whenever a new
       // token is generated.
