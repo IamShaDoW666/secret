@@ -14,6 +14,14 @@ class MessageRepository {
     return await messageDataProvider.createMessage(messageModel);
   }
 
+  Future<List<MessageModel>> readAck(String messageId) async {
+    return await messageDataProvider.readMessage(messageId);
+  }
+
+  Future<List<MessageModel>> updateMessage(MessageModel messageModel) async {
+    return await messageDataProvider.updateMessage(messageModel);
+  }
+
   Future<List<MessageModel>> deleteMessage(MessageModel messageModel) async {
     return await messageDataProvider.deleteMessage(messageModel);
   }

@@ -28,7 +28,7 @@ if (flutterVersionName == null) {
 android {
     namespace "com.example.task_manager_app"
     compileSdkVersion = flutter.compileSdkVersion
-    ndkVersion = "28.0.13004108"
+    ndkVersion = "29.0.13113456"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

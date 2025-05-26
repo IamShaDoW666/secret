@@ -21,4 +21,5 @@ class EVENTS {
   static const String typingServer = 'TYPING';
   static const String deliveryAck = 'DELIVERY_ACK';
   static const String readAck = 'READ_ACK';
+  static const String readAckServer = 'READ_ACK_SERVER';
 }

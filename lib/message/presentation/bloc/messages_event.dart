@@ -9,7 +9,25 @@ class AddNewMessageEvent extends MessagesEvent {
   AddNewMessageEvent({required this.messageModel});
 }
 
+class AddNewMessageForegroundEvent extends MessagesEvent {
+  final MessageModel messageModel;
+
+  AddNewMessageForegroundEvent({required this.messageModel});
+}
+
 class FetchMessageEvent extends MessagesEvent {}
+
+class ReadAckEvent extends MessagesEvent {
+  final String messageId;
+
+  ReadAckEvent({required this.messageId});
+}
+
+class UpdateMessageEvent extends MessagesEvent {
+  final MessageModel messageModel;
+
+  UpdateMessageEvent({required this.messageModel});
+}
 
 class ClearMessagesEvent extends MessagesEvent {}
 

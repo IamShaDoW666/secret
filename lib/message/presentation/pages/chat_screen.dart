@@ -11,6 +11,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:http/http.dart' as http;
 import 'package:task_manager_app/components/build_text_field.dart';
+import 'package:task_manager_app/components/message_bubble.dart';
 import 'package:task_manager_app/components/typing_indicator.dart';
 import 'package:task_manager_app/components/widgets.dart';
 import 'package:task_manager_app/message/data/local/model/message_model.dart';
@@ -75,15 +76,23 @@ class _ChatScreenState extends State<ChatScreen> {
           typingTimer?.cancel();
         });
         var message = MessageModel(
-          status: data["status"],
+            id: data["id"] ?? nanoid(),
+            status: "RECEIVED",
             message: data["message"],
             time: data["time"],
-            messageId: data["id"],
             username: data["username"]);
         context
             .read<MessagesBloc>()
             .add(AddNewMessageEvent(messageModel: message));
-            // socket.emit(EVENTS.readAck, )
+        socket.emit(EVENTS.readAck, <String, dynamic>{
+          "messageId": message.id,
+          "username": deviceUsername,
+        });
+      });
+
+      socket.on(EVENTS.readAckServer, (data) {
+        var messageId = data["id"];
+        context.read<MessagesBloc>().add(ReadAckEvent(messageId: messageId));
       });
 
       socket.on(EVENTS.connections, (data) {
@@ -104,6 +113,7 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.on(EVENTS.upstream, (data) {
       List<MessageModel>? messages = List.empty();
       messages = (data as List).map((i) => MessageModel.fromJson(i)).toList();
+      logger.d('messages: $messages');
       for (var message in messages) {
         if (message.username != deviceUsername) {
           context
@@ -114,13 +124,13 @@ class _ChatScreenState extends State<ChatScreen> {
       socket.emit(EVENTS.downstream);
     });
 
-    socket.on(EVENTS.typingServer, (data) {      
+    socket.on(EVENTS.typingServer, (data) {
       setState(() {
         typing = true;
         typingTimer?.cancel();
         _scrollDown();
       });
-      typingTimer = Timer(const Duration(milliseconds: 2500), () {        
+      typingTimer = Timer(const Duration(milliseconds: 2500), () {
         setState(() {
           typing = false;
         });
@@ -209,17 +219,28 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     messageController.clear();
     var message = MessageModel(
+        id: nanoid(),
         message: text,
-        messageId: nanoid(),
         status: "SENDING",
         time: DateTime.now().toString(),
         username: deviceUsername,
         sent: true);
     context.read<MessagesBloc>().add(AddNewMessageEvent(messageModel: message));
-    socket.emit(EVENTS.sendMessage, <String, dynamic>{
+    socket.emitWithAck(EVENTS.sendMessage, <String, dynamic>{
       "roomId": "1",
       "message": jsonEncode(message),
       "username": message.username,
+    }, ack: (data) {
+      if (data != null) {
+        // Update the message status to SENT
+        message.status = "SENT";
+        context
+            .read<MessagesBloc>()
+            .add(UpdateMessageEvent(messageModel: message));
+      } else {
+        // Handle error if needed
+        logger.e("Error sending message: $data");
+      }
     });
     context.read<MessagesBloc>().add(FetchMessageEvent());
   }
@@ -286,68 +307,6 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildMessageBubble(MessageModel message) {
-    var alignment = message.sent ? Alignment.centerRight : Alignment.centerLeft;
-    DateTime utcTime = DateTime.parse(message.time);
-    String formattedTime = DateFormat('h:mm a').format(utcTime.toLocal());
-    return Container(
-      alignment: alignment,
-      child: Column(
-        crossAxisAlignment:
-            message.sent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-                color: message.sent ? kPrimaryColor : kGrey0,
-                borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              crossAxisAlignment: message.sent
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message.message,
-                  style: primaryTextStyle(color: kWhiteColor),
-                ),
-                8.height,
-                Text(
-                  formattedTime,
-                  style: primaryTextStyle(size: 10, color: kGrey1),
-                  textAlign: TextAlign.right,
-                ),
-                getMessageStatus(message),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Icon getMessageStatus(MessageModel message) {
-    print(message.status);
-    if (message.status == "SENDING") {
-      return const Icon(Icons.access_time,
-          color: kGrey1, size: 12);
-    }
-    if (message.status == "SENT") {
-      return const Icon(Icons.done,
-          color: kGrey1, size: 12);
-    }
-    if (message.status == "RECEIVED") {
-      return const Icon(Icons.done_all,
-          color: kGrey1, size: 12);
-    }
-    if (message.status == "READ") {
-      return const Icon(Icons.done_all,
-          color: kPrimaryColor, size: 12);
-    }
-    return const Icon(Icons.error,
-        color: kRed, size: 12);
   }
 
   @override
@@ -466,8 +425,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                   if (index == state.messages.length) {
                                     return TypingIndicator();
                                   }
-                                  return _buildMessageBubble(
-                                      state.messages[index]);
+                                  return MessageBubble(
+                                      message: state.messages[index]);
                                 },
                               ),
                             ),
