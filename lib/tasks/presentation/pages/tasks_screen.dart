@@ -166,11 +166,8 @@ class _TasksScreenState extends State<TasksScreen> {
                     icon: const Icon(Icons.person))
             ],
           ),
-          body: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: Padding(
-                  padding: const EdgeInsets.all(20),
+          body: Padding(
+              padding: const EdgeInsets.all(20),
                   child: BlocConsumer<TasksBloc, TasksState>(
                       listener: (context, state) {
                     if (state is LoadTaskFailure) {
@@ -297,7 +294,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             );
                     }
                     return Container();
-                  }))),
+                  })),
           floatingActionButton: FloatingActionButton(
               child: const Icon(
                 Icons.add_circle,

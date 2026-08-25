@@ -32,7 +32,7 @@ Future<void> main() async {
       setValue(Constants.environment, true);
     }
     if (!value.containsKey(Constants.localhost)) {
-      setValue(Constants.localhost, "http://192.168.18.38:5100");
+      setValue(Constants.localhost, "http://192.168.18.94:5100");
     }
   });
   if (Platform.isAndroid) {

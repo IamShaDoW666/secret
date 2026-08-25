@@ -55,11 +55,8 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
             appBar: const CustomAppBar(
               title: 'Create New Task',
             ),
-            body: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => FocusScope.of(context).unfocus(),
-                child: Padding(
-                    padding: const EdgeInsets.all(20),
+            body: Padding(
+                padding: const EdgeInsets.all(20),
                     child: BlocConsumer<TasksBloc, TasksState>(
                         listener: (context, state) {
                       if (state is AddTaskFailure) {
@@ -236,6 +233,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                           )
                         ],
                       );
-                    })))));
+                    }))));
   }
 }

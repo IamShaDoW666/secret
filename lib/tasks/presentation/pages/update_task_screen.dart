@@ -69,11 +69,8 @@ class _UpdateTaskScreenState extends State<UpdateTaskScreen> {
             appBar: const CustomAppBar(
               title: 'Update Task',
             ),
-            body: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => FocusScope.of(context).unfocus(),
-                child: Padding(
-                    padding: const EdgeInsets.all(20),
+            body: Padding(
+                padding: const EdgeInsets.all(20),
                     child: BlocConsumer<TasksBloc, TasksState>(
                         listener: (context, state) {
                       if (state is UpdateTaskFailure) {
@@ -210,6 +207,6 @@ class _UpdateTaskScreenState extends State<UpdateTaskScreen> {
                           ),
                         ],
                       );
-                    })))));
+                    }))));
   }
 }
