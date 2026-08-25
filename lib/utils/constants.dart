@@ -4,7 +4,7 @@ class Constants {
   // static const String username = "Milan";
   static const String firebaseToken = "firebase-token";
   static const String localhost = "localhost";
-  static const String livehost = "https://test.milanpramod.online";
+  static const String livehost = "https://chat.milanpramod.dev";
   static const bool productionEnv = false;
   static const String environment = "environment";
   static const String usernameKey = "username";
