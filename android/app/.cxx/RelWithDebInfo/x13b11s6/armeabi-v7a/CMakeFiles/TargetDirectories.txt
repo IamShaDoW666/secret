@@ -1,0 +1,2 @@
+C:/Users/Milan/Desktop/Apps/secret/android/app/.cxx/RelWithDebInfo/x13b11s6/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Milan/Desktop/Apps/secret/android/app/.cxx/RelWithDebInfo/x13b11s6/armeabi-v7a/CMakeFiles/rebuild_cache.dir

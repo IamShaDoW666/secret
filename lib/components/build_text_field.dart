@@ -39,6 +39,9 @@ class BuildTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      onTapOutside: (event) {
+        FocusScope.of(context).unfocus();
+      },
       onChanged: (value) {
         onChange(value);
       },

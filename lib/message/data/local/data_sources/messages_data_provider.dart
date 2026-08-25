@@ -51,6 +51,41 @@ class MessageDataProvider {
     }
   }
 
+  Future<List<MessageModel>> updateMessage(MessageModel messageModel) async {
+    try {
+      final index =
+          messages.indexWhere((message) => message.id == messageModel.id);
+      if (index != -1) {
+        messages[index] = messageModel;
+        final List<String> messageJsonList =
+            messages.map((message) => json.encode(message.toJson())).toList();
+        // prefs!.setStringList(Constants.messageKey, messageJsonList);
+        await setValue(Constants.messageKey, messageJsonList);
+      }
+      return messages;
+    } catch (exception) {
+      throw Exception(handleException(exception));
+    }
+  }
+
+  Future<List<MessageModel>> readMessage(String messageId) async {
+    try {
+      final index = messages.indexWhere((message) => message.id == messageId);
+      if (index != -1) {
+        final message = messages[index];
+        message.status = "READ"; // Update status to READ
+        messages[index] = message; // Update the message in the list
+        final List<String> messageJsonList =
+            messages.map((message) => json.encode(message.toJson())).toList();
+        // prefs!.setStringList(Constants.messageKey, messageJsonList);
+        await setValue(Constants.messageKey, messageJsonList);
+      }
+      return messages;
+    } catch (exception) {
+      throw Exception(handleException(exception));
+    }
+  }
+
   Future<List<MessageModel>> clearMessages() async {
     try {
       messages.clear();

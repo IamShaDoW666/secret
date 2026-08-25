@@ -55,7 +55,6 @@ class UserSelection extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: () async {
         await setValue(Constants.usernameKey, user);
-        await initToken();
         const TasksScreen()
             // ignore: use_build_context_synchronously
             .launch(duration: const Duration(milliseconds: 500), context);

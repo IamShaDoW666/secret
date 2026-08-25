@@ -63,6 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1012763415795',
     projectId: 'chatt-cfc12',
     storageBucket: 'chatt-cfc12.appspot.com',
-    iosBundleId: 'com.example.taskManagerApp',
+    iosBundleId: 'com.milan.secret',
   );
 }

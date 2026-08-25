@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 
@@ -10,6 +11,8 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:http/http.dart' as http;
 import 'package:task_manager_app/components/build_text_field.dart';
+import 'package:task_manager_app/components/message_bubble.dart';
+import 'package:task_manager_app/components/typing_indicator.dart';
 import 'package:task_manager_app/components/widgets.dart';
 import 'package:task_manager_app/message/data/local/model/message_model.dart';
 import 'package:task_manager_app/message/presentation/bloc/messages_bloc.dart';
@@ -18,11 +21,14 @@ import 'package:task_manager_app/utils/color_palette.dart';
 import 'package:task_manager_app/utils/common.dart';
 import 'package:task_manager_app/utils/constants.dart';
 import 'package:task_manager_app/utils/font_sizes.dart';
+import 'package:task_manager_app/utils/logger.dart';
+import 'package:throttling/throttling.dart';
+import 'package:nanoid/nanoid.dart';
 
 import '../../../utils/util.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  const ChatScreen({super.key});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -33,51 +39,64 @@ class _ChatScreenState extends State<ChatScreen> {
   TextEditingController messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode focusNode = FocusNode();
+  final thr = Throttling<void>(duration: const Duration(milliseconds: 2000));
+  Timer? typingTimer;
   bool connected = false;
   bool inChat = false;
+  bool typing = false;
   String lastOnline = '-';
   final String deviceUsername = getStringAsync(Constants.usernameKey);
   void connectSocket() {
-    print('--------------------------- ${deviceUsername}');
-    print(io.OptionBuilder()
+    logger.d(io.OptionBuilder()
         .setTransports(['websocket'])
         .disableAutoConnect()
         .setQuery({'username': deviceUsername})
         .build());
     socket = io.io(
-        getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost,
+        getBoolAsync(Constants.environment)
+            ? Constants.livehost
+            : getStringAsync(Constants.localhost),
         io.OptionBuilder()
             .setTransports(['websocket'])
             .disableAutoConnect()
             .setQuery({'username': deviceUsername})
             .build());
-    // io.OptionBuilder()
-    //     .setTransports(['websocket'])
-    //     .disableAutoConnect()
-    //     .setQuery({'username': deviceUsername})
-    //     .build());
-    print('+++++++++++++++++++++++++++ ${deviceUsername}');
+
     socket.connect();
 
     socket.onConnect((data) {
       setState(() {
         connected = true;
-        if (getStringListAsync(Constants.messageKey)!.isNotEmpty) scrollDown();
       });
 
       // New message event
       socket.on(EVENTS.newMessage, (data) {
+        setState(() {
+          typing = false;
+          typingTimer?.cancel();
+        });
         var message = MessageModel(
+            id: data["id"] ?? nanoid(),
+            status: "RECEIVED",
             message: data["message"],
             time: data["time"],
             username: data["username"]);
         context
             .read<MessagesBloc>()
             .add(AddNewMessageEvent(messageModel: message));
-        scrollDown();
+        socket.emit(EVENTS.readAck, <String, dynamic>{
+          "messageId": message.id,
+          "username": deviceUsername,
+        });
+      });
+
+      socket.on(EVENTS.readAckServer, (data) {
+        var messageId = data["id"];
+        context.read<MessagesBloc>().add(ReadAckEvent(messageId: messageId));
       });
 
       socket.on(EVENTS.connections, (data) {
+        logger.d(data);
         if (data["connections"] > 1) {
           setState(() {
             inChat = true;
@@ -94,6 +113,7 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.on(EVENTS.upstream, (data) {
       List<MessageModel>? messages = List.empty();
       messages = (data as List).map((i) => MessageModel.fromJson(i)).toList();
+      logger.d('messages: $messages');
       for (var message in messages) {
         if (message.username != deviceUsername) {
           context
@@ -101,9 +121,20 @@ class _ChatScreenState extends State<ChatScreen> {
               .add(AddNewMessageEvent(messageModel: message));
         }
       }
-      // scrollDown();
-      _scrollController.jumpToBottom();
-      socket.emit(EVENTS.downstream, deviceUsername);
+      socket.emit(EVENTS.downstream);
+    });
+
+    socket.on(EVENTS.typingServer, (data) {
+      setState(() {
+        typing = true;
+        typingTimer?.cancel();
+        _scrollDown();
+      });
+      typingTimer = Timer(const Duration(milliseconds: 2500), () {
+        setState(() {
+          typing = false;
+        });
+      });
     });
 
     socket.onConnectError((data) {
@@ -124,7 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> getLastOnline() async {
     var res = await http.get(
       Uri.parse(
-          '${getBoolAsync(Constants.environment) ? Constants.livehost : Constants.localhost}/last-online?username=${getReciever(deviceUsername)}'),
+          '${getBoolAsync(Constants.environment) ? Constants.livehost : getStringAsync(Constants.localhost)}/last-online?username=${getReciever(deviceUsername)}'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -151,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     focusNode.addListener(() {
       if (focusNode.hasFocus) {
-        Future.delayed(const Duration(milliseconds: 500), () => scrollDown());
+        Future.delayed(const Duration(milliseconds: 300), () => _scrollDown());
       }
     });
     context.read<MessagesBloc>().add(FetchMessageEvent());
@@ -168,11 +199,18 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void scrollDown() {
-    _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent + 1000,
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.fastOutSlowIn);
+  void _scrollDown() {
+    Future.delayed(Duration(milliseconds: 100), () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    });
   }
 
   void _handleSubmitted(String text) {
@@ -181,18 +219,30 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     messageController.clear();
     var message = MessageModel(
+        id: nanoid(),
         message: text,
+        status: "SENDING",
         time: DateTime.now().toString(),
         username: deviceUsername,
         sent: true);
     context.read<MessagesBloc>().add(AddNewMessageEvent(messageModel: message));
-    socket.emit(EVENTS.sendMessage, <String, dynamic>{
+    socket.emitWithAck(EVENTS.sendMessage, <String, dynamic>{
       "roomId": "1",
-      "message": text,
-      "username": message.username
+      "message": jsonEncode(message),
+      "username": message.username,
+    }, ack: (data) {
+      if (data != null) {
+        // Update the message status to SENT
+        message.status = "SENT";
+        context
+            .read<MessagesBloc>()
+            .add(UpdateMessageEvent(messageModel: message));
+      } else {
+        // Handle error if needed
+        logger.e("Error sending message: $data");
+      }
     });
     context.read<MessagesBloc>().add(FetchMessageEvent());
-    scrollDown();
   }
 
   Widget _buildTextComposer() {
@@ -216,6 +266,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   textColor: kWhiteColor,
                   onChange: (val) {
                     setState(() {});
+                    thr.throttle(() {
+                      socket.emit(EVENTS.typing);
+                    });
                   },
                   controller: messageController,
                 ),
@@ -252,45 +305,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(MessageModel message) {
-    var alignment = message.sent ? Alignment.centerRight : Alignment.centerLeft;
-    DateTime utcTime = DateTime.parse(message.time);
-    String formattedTime = DateFormat('h:mm a').format(utcTime.toLocal());
-    return Container(
-      alignment: alignment,
-      child: Column(
-        crossAxisAlignment:
-            message.sent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-                color: message.sent ? kPrimaryColor : kGrey0,
-                borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              crossAxisAlignment: message.sent
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message.message,
-                  style: primaryTextStyle(color: kWhiteColor),
-                ),
-                8.height,
-                Text(
-                  formattedTime,
-                  style: primaryTextStyle(size: 10, color: kGrey1),
-                  textAlign: TextAlign.right,
-                )
-              ],
-            ),
-          )
-        ],
       ),
     );
   }
@@ -369,6 +383,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     .showSnackBar(getSnackBar(state.error, kRed));
               }
 
+              if (state is FetchMessagesSuccess) {
+                if (state.messages.isNotEmpty) {
+                  _scrollDown();
+                }
+              }
+
               if (state is AddMessageFailure) {
                 context.read<MessagesBloc>().add(FetchMessageEvent());
               }
@@ -398,22 +418,15 @@ class _ChatScreenState extends State<ChatScreen> {
                               child: ListView.builder(
                                 controller: _scrollController,
                                 padding: const EdgeInsets.all(8.0),
-                                itemCount: state.messages.length,
+                                itemCount: !typing
+                                    ? state.messages.length
+                                    : state.messages.length + 1,
                                 itemBuilder: (BuildContext context, int index) {
-                                  // if (index == state.messages.length) {
-                                  //   return Center(
-                                  //     child: Container(
-                                  //       child: Text(
-                                  //         'Last Online: 2:52 AM',
-                                  //         style: primaryTextStyle(
-                                  //             size: 10, color: kGrey1),
-                                  //       ),
-                                  //       height: 25,
-                                  //     ),
-                                  //   );
-                                  // }
-                                  return _buildMessageBubble(
-                                      state.messages[index]);
+                                  if (index == state.messages.length) {
+                                    return TypingIndicator();
+                                  }
+                                  return MessageBubble(
+                                      message: state.messages[index]);
                                 },
                               ),
                             ),

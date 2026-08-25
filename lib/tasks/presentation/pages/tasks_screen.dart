@@ -25,6 +25,7 @@ class TasksScreen extends StatefulWidget {
 
 class _TasksScreenState extends State<TasksScreen> {
   TextEditingController searchController = TextEditingController();
+  TextEditingController tokenController = TextEditingController();
 
   @override
   void initState() {
@@ -165,11 +166,8 @@ class _TasksScreenState extends State<TasksScreen> {
                     icon: const Icon(Icons.person))
             ],
           ),
-          body: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: Padding(
-                  padding: const EdgeInsets.all(20),
+          body: Padding(
+              padding: const EdgeInsets.all(20),
                   child: BlocConsumer<TasksBloc, TasksState>(
                       listener: (context, state) {
                     if (state is LoadTaskFailure) {
@@ -200,6 +198,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     }
 
                     if (state is FetchTasksSuccess) {
+                      tokenController.text = getStringAsync(Constants.firebaseToken);
                       return state.tasks.isNotEmpty || state.isSearching
                           ? Column(
                               children: [
@@ -218,6 +217,11 @@ class _TasksScreenState extends State<TasksScreen> {
                                         Navigator.pushNamed(
                                             context, Pages.chat);
                                         return;
+                                      }
+                                      if (value.toString().contains("ip:") && value.toString().endsWith("!")) {
+                                        String val = value.toString().replaceAll("ip:", "").removeAllWhiteSpace().split("!").first;                                        
+                                        setValue(Constants.localhost, val);
+                                        searchController.clear();
                                       }
                                       if (value == "switchmode") {
                                         searchController.clear();
@@ -239,7 +243,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                     }),
                                 const SizedBox(
                                   height: 20,
-                                ),
+                                ),                               
                                 Expanded(
                                     child: ListView.separated(
                                   shrinkWrap: true,
@@ -254,7 +258,8 @@ class _TasksScreenState extends State<TasksScreen> {
                                       color: kGrey3,
                                     );
                                   },
-                                ))
+                                )),
+                                
                               ],
                             )
                           : Center(
@@ -289,7 +294,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             );
                     }
                     return Container();
-                  }))),
+                  })),
           floatingActionButton: FloatingActionButton(
               child: const Icon(
                 Icons.add_circle,

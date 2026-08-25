@@ -1,0 +1,2 @@
+/Users/milan/Desktop/Apps/secret/android/app/.cxx/RelWithDebInfo/6w3t5qx3/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/milan/Desktop/Apps/secret/android/app/.cxx/RelWithDebInfo/6w3t5qx3/arm64-v8a/CMakeFiles/rebuild_cache.dir
